@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "WatchHistory": {
+      "title": "Watch History",
+      "description": "Record of a movie/episode watched by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "movieSlug": { "type": "string" },
+        "movieName": { "type": "string" },
+        "movieThumb": { "type": "string" },
+        "episodeName": { "type": "string" },
+        "episodeSlug": { "type": "string" },
+        "progress": { "type": "number", "description": "Progress in seconds" },
+        "duration": { "type": "number", "description": "Total duration in seconds" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "movieSlug", "episodeSlug", "updatedAt"]
+    },
+    "Bookmark": {
+      "title": "Bookmark",
+      "description": "Movies saved by the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "movieSlug": { "type": "string" },
+        "movieName": { "type": "string" },
+        "movieThumb": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "movieSlug", "createdAt"]
+    },
+    "AppearanceConfig": {
+      "title": "Appearance Config",
+      "description": "Custom CSS and JS for the application",
+      "type": "object",
+      "properties": {
+        "customCss": { "type": "string" },
+        "customJs": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": "WatchHistory",
+      "description": "User's watch history"
+    },
+    "/users/{userId}/bookmarks/{bookmarkId}": {
+      "schema": "Bookmark",
+      "description": "User's bookmarked movies"
+    },
+    "/configs/appearance": {
+      "schema": "AppearanceConfig",
+      "description": "Global appearance configuration"
+    }
+  }
+}
