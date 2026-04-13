@@ -19,16 +19,15 @@ export default function Home() {
 
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      // If we already have data, don't show full screen loader
+      if (newUpdates.length === 0) setLoading(true);
       
-      // Safety timeout for Home loading
       const safetyTimeout = setTimeout(() => {
-        if (loading) {
-          console.warn("Home: Loading safety timeout reached.");
-          setLoading(false);
+        setLoading(false);
+        if (newUpdates.length === 0) {
           setError(t('home.error_loading'));
         }
-      }, 15000);
+      }, 10000);
 
       try {
         const [newRes, movieRes, tvRes] = await Promise.all([
@@ -41,7 +40,9 @@ export default function Home() {
         setTvSeries(tvRes.items);
         setError(null);
       } catch (err) {
-        setError(t('home.error_loading'));
+        if (newUpdates.length === 0) {
+          setError(t('home.error_loading'));
+        }
         console.error(err);
       } finally {
         setLoading(false);

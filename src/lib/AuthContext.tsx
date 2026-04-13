@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn("AuthContext: Safety timeout reached. Forcing loading to false.");
         setLoading(false);
       }
-    }, 5000); // Reduced to 5s
+    }, 3000); // Reduced to 3s for faster recovery
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              role: firebaseUser.email === 'minhgiang@pavietnam.vn' ? 'admin' : 'user',
+              role: firebaseUser.email === 'minhkhung72@gmail.com' ? 'admin' : 'user',
               createdAt: serverTimestamp(),
             };
             await setDoc(userDocRef, newProfile);
@@ -75,6 +75,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         clearTimeout(safetyTimeout);
       }
+    }, (error) => {
+      console.error("onAuthStateChanged error:", error);
+      setLoading(false);
+      clearTimeout(safetyTimeout);
     });
 
     return () => {
@@ -109,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isAdmin = profile?.role === 'admin' || user?.email === 'minhgiang@pavietnam.vn';
+  const isAdmin = profile?.role === 'admin' || user?.email === 'minhkhung72@gmail.com';
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, login, logout, isAdmin }}>
