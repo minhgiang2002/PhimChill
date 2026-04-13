@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0873345154",
-  "appId": "1:738728431636:web:aeeaab71789f92a0ffd701",
-  "apiKey": "AIzaSyDzoNcTnOcX6JxtgX8kw73qYR_ZocE-Igc",
-  "authDomain": "gen-lang-client-0873345154.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-71e1b384-fbea-42bb-ad72-a0f4922fe91d",
-  "storageBucket": "gen-lang-client-0873345154.firebasestorage.app",
-  "messagingSenderId": "738728431636",
-  "measurementId": ""
+  "projectId": "movie-web-58438",
+  "appId": "1:595093485038:web:dc5be92ac450c985aa8aff",
+  "apiKey": "AIzaSyAqo_aqw0uDjPPdN5n22t__8JfrLM7R6CM",
+  "authDomain": "movie-web-58438.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "movie-web-58438.firebasestorage.app",
+  "messagingSenderId": "595093485038",
+  "measurementId": "G-MRKH22ZJBQ"
 }
