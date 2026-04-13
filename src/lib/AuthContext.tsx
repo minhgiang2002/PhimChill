@@ -29,6 +29,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ADMIN_EMAILS = ['minhkhung72@gmail.com', 'minhgiang@pavietnam.vn'];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              role: firebaseUser.email === 'minhkhung72@gmail.com' ? 'admin' : 'user',
+              role: ADMIN_EMAILS.includes(firebaseUser.email || '') ? 'admin' : 'user',
               createdAt: serverTimestamp(),
             };
             await setDoc(userDocRef, newProfile);
@@ -113,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isAdmin = profile?.role === 'admin' || user?.email === 'minhkhung72@gmail.com';
+  const isAdmin = profile?.role === 'admin' || ADMIN_EMAILS.includes(user?.email || '');
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, login, logout, isAdmin }}>

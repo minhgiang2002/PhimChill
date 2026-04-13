@@ -62,6 +62,23 @@ export default function AdminPage() {
     fetchUsers();
   }, [isAdmin]);
 
+  const handleUpdateRole = async (userId: string, currentRole: string) => {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    
+    if (!window.confirm(`Bạn có chắc chắn muốn chuyển vai trò của người dùng này thành ${newRole.toUpperCase()}?`)) {
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, 'users', userId), { role: newRole }, { merge: true });
+      setUsers(prev => prev.map(u => u.uid === userId ? { ...u, role: newRole } : u));
+      toast.success(`Đã cập nhật vai trò thành ${newRole.toUpperCase()}`);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      toast.error('Lỗi khi cập nhật vai trò');
+    }
+  };
+
   const handleDeleteUser = async (userId: string, userEmail: string) => {
     if (userEmail === 'minhgiang@pavietnam.vn') {
       toast.error('Không thể xóa tài khoản Admin chính!');
@@ -275,12 +292,15 @@ export default function AdminPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-400">{u.email}</td>
                   <td className="px-6 py-4">
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded",
-                      u.role === 'admin' ? "bg-brand text-white shadow-lg shadow-brand/20" : "bg-gray-400/10 text-gray-400"
-                    )}>
+                    <button
+                      onClick={() => handleUpdateRole(u.uid, u.role)}
+                      className={cn(
+                        "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all hover:scale-105",
+                        u.role === 'admin' ? "bg-brand text-white shadow-lg shadow-brand/20" : "bg-gray-400/10 text-gray-400 hover:bg-gray-400/20"
+                      )}
+                    >
                       {u.role === 'admin' ? 'ADMIN' : 'USER'}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-400">
                     {u.createdAt?.toDate().toLocaleDateString('vi-VN')}
