@@ -6,7 +6,6 @@ import { Star, Clock, List, Info, Play, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { SafeImage } from '@/src/components/SafeImage';
-import { VideoPlayer } from '@/src/components/VideoPlayer';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/src/lib/AuthContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -21,14 +20,11 @@ export default function MovieDetail() {
   const [loading, setLoading] = useState(true);
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   const [activeServerIndex, setActiveServerIndex] = useState(0);
-  const [useEmbedPlayer, setUseEmbedPlayer] = useState(false);
   const [isCinemaMode, setIsCinemaMode] = useState(false);
   const [showIframeOverlay, setShowIframeOverlay] = useState(false);
-  const [playerErrorCount, setPlayerErrorCount] = useState(0);
 
   useEffect(() => {
-    setUseEmbedPlayer(false);
-    if (currentEpisode && !currentEpisode.m3u8) {
+    if (currentEpisode && !currentEpisode.embed) {
       setShowIframeOverlay(true);
       const timer = setTimeout(() => setShowIframeOverlay(false), 5000);
       return () => clearTimeout(timer);
@@ -56,39 +52,6 @@ export default function MovieDetail() {
     }
   }, [currentEpisode, user, movie]);
 
-  const handlePlayerError = () => {
-    console.warn("[MovieDetail] Player error detected, attempting fallback...");
-    setPlayerErrorCount(prev => prev + 1);
-    
-    // If we have more servers, try the next one
-    if (movie && movie.episodes.length > 1 && activeServerIndex < movie.episodes.length - 1) {
-      const nextServerIndex = activeServerIndex + 1;
-      console.log(`[MovieDetail] Switching to backup server: ${nextServerIndex + 1}`);
-      setActiveServerIndex(nextServerIndex);
-      
-      // Find the same episode in the next server
-      if (currentEpisode) {
-        const nextServerEpisode = movie.episodes[nextServerIndex].items.find(
-          ep => ep.name === currentEpisode.name || ep.slug === currentEpisode.slug
-        );
-        if (nextServerEpisode) {
-          setCurrentEpisode(nextServerEpisode);
-          toast.error(`Nguồn ${activeServerIndex + 1} lỗi, đang chuyển sang Nguồn ${nextServerIndex + 1}...`);
-          return;
-        }
-      }
-    }
-
-    // If no more servers or episode not found in next server, fallback to embed
-    if (!useEmbedPlayer) {
-      console.log("[MovieDetail] All M3U8 sources failed, falling back to Embed player");
-      setUseEmbedPlayer(true);
-      toast.error("Trình phát chính lỗi, đang chuyển sang trình phát dự phòng...");
-    } else {
-      toast.error("Tất cả nguồn phát đều gặp sự cố. Vui lòng thử lại sau hoặc báo lỗi.");
-    }
-  };
-
   useEffect(() => {
     const loadMovie = async () => {
       if (!slug) return;
@@ -104,13 +67,8 @@ export default function MovieDetail() {
       }
     };
     loadMovie();
-    setPlayerErrorCount(0);
     window.scrollTo(0, 0);
   }, [slug]);
-
-  useEffect(() => {
-    setPlayerErrorCount(0);
-  }, [currentEpisode]);
 
   if (loading) {
     return (
@@ -152,8 +110,8 @@ export default function MovieDetail() {
       <div className="relative min-h-[70vh] flex items-end pb-12">
         <div className="absolute inset-0">
           <SafeImage
-            src={movie.thumb_url}
-            secondarySrc={movie.poster_url}
+            src={movie.poster_url}
+            secondarySrc={movie.thumb_url}
             movieSlug={movie.slug}
             alt={movie.name}
             className="h-full w-full object-cover"
@@ -170,8 +128,8 @@ export default function MovieDetail() {
               className="hidden md:block w-64 shrink-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10"
             >
               <SafeImage
-                src={movie.poster_url}
-                secondarySrc={movie.thumb_url}
+                src={movie.thumb_url}
+                secondarySrc={movie.poster_url}
                 movieSlug={movie.slug}
                 alt={movie.name}
                 className="w-full h-auto"
@@ -241,32 +199,24 @@ export default function MovieDetail() {
               "aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl relative transition-all duration-500",
               isCinemaMode ? "z-50 scale-105" : "z-0"
             )}>
-               {currentEpisode.m3u8 && !useEmbedPlayer ? (
-                 <VideoPlayer 
-                   src={currentEpisode.m3u8} 
-                   poster={movie.thumb_url} 
-                   onError={handlePlayerError}
-                 />
-               ) : (
-                 <div className="relative w-full h-full">
-                   <iframe
-                    src={currentEpisode.embed}
-                    className="w-full h-full"
-                    allowFullScreen
-                    frameBorder="0"
-                    scrolling="no"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-top-navigation"
-                    allow="autoplay; fullscreen; picture-in-picture"
-                  />
-                  {showIframeOverlay && (
-                    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-10">
-                      <Loader2 className="w-8 h-8 text-brand animate-spin mb-2" />
-                      <p className="text-xs text-gray-400">{t('common.loading')}</p>
-                      <p className="text-[10px] text-gray-600 mt-2">Đang tối ưu trình phát...</p>
-                    </div>
-                  )}
-                 </div>
-               )}
+              <div className="relative w-full h-full">
+                <iframe
+                  src={currentEpisode.embed}
+                  className="w-full h-full"
+                  allowFullScreen
+                  frameBorder="0"
+                  scrolling="no"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-top-navigation"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                />
+                {showIframeOverlay && (
+                  <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-10">
+                    <Loader2 className="w-8 h-8 text-brand animate-spin mb-2" />
+                    <p className="text-xs text-gray-400">{t('common.loading')}</p>
+                    <p className="text-[10px] text-gray-600 mt-2">Đang tối ưu trình phát...</p>
+                  </div>
+                )}
+              </div>
             </div>
             <div className={cn(
               "mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white/5 border border-white/10 transition-all duration-500",
@@ -282,11 +232,6 @@ export default function MovieDetail() {
                     </span>
                   </div>
                 </div>
-                {useEmbedPlayer && currentEpisode.m3u8 && (
-                  <p className="text-[10px] text-yellow-500 mt-1 font-medium">
-                    ⚠️ {t('detail.player_error')}
-                  </p>
-                )}
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
@@ -299,12 +244,6 @@ export default function MovieDetail() {
                   )}
                 >
                   🎬 {isCinemaMode ? "Tắt rạp phim" : "Chế độ rạp phim"}
-                </button>
-                <button
-                  onClick={() => setUseEmbedPlayer(!useEmbedPlayer)}
-                  className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg border border-white/10 transition-colors font-bold text-gray-300"
-                >
-                  🔄 {t('detail.switch_player')}
                 </button>
                 <div className="text-[10px] text-gray-500 max-w-xs text-right hidden sm:block">
                   {t('detail.player_note')}
@@ -329,14 +268,25 @@ export default function MovieDetail() {
                   </h2>
                   
                   {movie.episodes.length > 1 && (
-                    <div className="flex flex-wrap items-center gap-2 bg-white/5 p-1 rounded-lg border border-white/10">
+                    <div className="flex flex-wrap items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
                       {movie.episodes.map((server, idx) => (
                         <button
                           key={idx}
-                          onClick={() => setActiveServerIndex(idx)}
+                          onClick={() => {
+                            setActiveServerIndex(idx);
+                            // If an episode is currently playing, try to find it on the new server
+                            if (currentEpisode) {
+                              const matchingEp = server.items.find(item => item.name === currentEpisode.name);
+                              if (matchingEp) {
+                                setCurrentEpisode(matchingEp);
+                              }
+                            }
+                          }}
                           className={cn(
-                            "px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-all",
-                            activeServerIndex === idx ? "bg-brand text-white" : "text-gray-400 hover:text-white"
+                            "px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border",
+                            activeServerIndex === idx 
+                              ? "bg-brand border-brand text-white shadow-lg shadow-brand/20" 
+                              : "bg-transparent border-transparent text-gray-400 hover:text-white hover:bg-white/5"
                           )}
                         >
                           {server.server_name}
