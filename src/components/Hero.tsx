@@ -17,8 +17,8 @@ export default function Hero({ movie }: HeroProps) {
       {/* Background Image */}
       <div className="absolute inset-0">
         <SafeImage
-          src={movie.thumb_url}
-          secondarySrc={movie.poster_url}
+          src={movie.poster_url}
+          secondarySrc={movie.thumb_url}
           alt={movie.name}
           className="h-full w-full object-cover scale-105"
         />
