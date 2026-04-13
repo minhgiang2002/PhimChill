@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { movieService } from '@/src/services/movieService';
 import { Movie, Paginate } from '@/src/types/movie';
-import MovieCard from '@/src/components/MovieCard';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import MovieCard, { MovieCardSkeleton } from '@/src/components/MovieCard';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function MovieList() {
@@ -66,40 +66,36 @@ export default function MovieList() {
         </h1>
       </div>
 
-      {loading ? (
-        <div className="h-64 flex items-center justify-center">
-          <Loader2 className="w-10 h-10 text-brand animate-spin" />
-        </div>
-      ) : (
-        <>
-          <div className="movie-grid">
-            {movies.map((movie, idx) => (
-              <MovieCard key={movie.slug} movie={movie} index={idx} />
-            ))}
-          </div>
+      <div className="movie-grid">
+        {loading ? (
+          Array.from({ length: 12 }).map((_, i) => <MovieCardSkeleton key={i} />)
+        ) : (
+          movies.map((movie, idx) => (
+            <MovieCard key={movie.slug} movie={movie} index={idx} />
+          ))
+        )}
+      </div>
 
-          {paginate && paginate.total_page > 1 && (
-            <div className="mt-12 flex items-center justify-center gap-4">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(p => p - 1)}
-                className="p-2 rounded-full bg-white/5 border border-white/10 disabled:opacity-20 hover:bg-brand transition-colors"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <span className="font-bold text-sm">
-                {t('list.page')} {page} / {paginate.total_page}
-              </span>
-              <button
-                disabled={page === paginate.total_page}
-                onClick={() => setPage(p => p + 1)}
-                className="p-2 rounded-full bg-white/5 border border-white/10 disabled:opacity-20 hover:bg-brand transition-colors"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
-          )}
-        </>
+      {!loading && paginate && paginate.total_page > 1 && (
+        <div className="mt-12 flex items-center justify-center gap-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => p - 1)}
+            className="p-2 rounded-full bg-white/5 border border-white/10 disabled:opacity-20 hover:bg-brand transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <span className="font-bold text-sm">
+            {t('list.page')} {page} / {paginate.total_page}
+          </span>
+          <button
+            disabled={page === paginate.total_page}
+            onClick={() => setPage(p => p + 1)}
+            className="p-2 rounded-full bg-white/5 border border-white/10 disabled:opacity-20 hover:bg-brand transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
       )}
     </div>
   );

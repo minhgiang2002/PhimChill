@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { movieService } from '@/src/services/movieService';
 import { Movie } from '@/src/types/movie';
 import Hero from '@/src/components/Hero';
-import MovieCard from '@/src/components/MovieCard';
-import { ChevronRight, Loader2, Zap, Film, Tv, TrendingUp } from 'lucide-react';
+import MovieCard, { MovieCardSkeleton } from '@/src/components/MovieCard';
+import { ChevronRight, Zap, Film, Tv, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiSource } from '@/src/services/movieService';
@@ -19,12 +19,11 @@ export default function Home() {
 
   useEffect(() => {
     const loadData = async () => {
-      // If we already have data, don't show full screen loader
-      if (newUpdates.length === 0) setLoading(true);
+      setLoading(true);
       
       const safetyTimeout = setTimeout(() => {
-        setLoading(false);
         if (newUpdates.length === 0) {
+          setLoading(false);
           setError(t('home.error_loading'));
         }
       }, 10000);
@@ -52,19 +51,17 @@ export default function Home() {
     loadData();
   }, [t, source]);
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-brand animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (error && newUpdates.length === 0) {
     return (
       <div className="h-screen flex flex-col items-center justify-center px-4 text-center">
         <h2 className="text-2xl font-bold mb-2 text-brand">{error}</h2>
         <p className="text-gray-400">{t('home.error_sub')}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-6 bg-brand px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs"
+        >
+          Thử lại
+        </button>
       </div>
     );
   }
@@ -78,7 +75,11 @@ export default function Home() {
 
   return (
     <div className="pb-20 bg-surface">
-      {newUpdates[0] && <Hero movie={newUpdates[0]} />}
+      {loading && newUpdates.length === 0 ? (
+        <div className="h-[70vh] bg-surface-light animate-pulse" />
+      ) : (
+        newUpdates[0] && <Hero movie={newUpdates[0]} />
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
         {/* Quick Menu */}
@@ -115,9 +116,13 @@ export default function Home() {
             </Link>
           </div>
           <div className="movie-grid">
-            {newUpdates.slice(1, 13).map((movie, idx) => (
-              <MovieCard key={movie.slug} movie={movie} index={idx} />
-            ))}
+            {loading && newUpdates.length === 0 ? (
+              Array.from({ length: 12 }).map((_, i) => <MovieCardSkeleton key={i} />)
+            ) : (
+              newUpdates.slice(1, 13).map((movie, idx) => (
+                <MovieCard key={movie.slug} movie={movie} index={idx} />
+              ))
+            )}
           </div>
         </section>
 
@@ -136,9 +141,13 @@ export default function Home() {
             </Link>
           </div>
           <div className="movie-grid">
-            {movies.slice(0, 12).map((movie, idx) => (
-              <MovieCard key={movie.slug} movie={movie} index={idx} />
-            ))}
+            {loading && movies.length === 0 ? (
+              Array.from({ length: 12 }).map((_, i) => <MovieCardSkeleton key={i} />)
+            ) : (
+              movies.slice(0, 12).map((movie, idx) => (
+                <MovieCard key={movie.slug} movie={movie} index={idx} />
+              ))
+            )}
           </div>
         </section>
 
@@ -157,9 +166,13 @@ export default function Home() {
             </Link>
           </div>
           <div className="movie-grid">
-            {tvSeries.slice(0, 12).map((movie, idx) => (
-              <MovieCard key={movie.slug} movie={movie} index={idx} />
-            ))}
+            {loading && tvSeries.length === 0 ? (
+              Array.from({ length: 12 }).map((_, i) => <MovieCardSkeleton key={i} />)
+            ) : (
+              tvSeries.slice(0, 12).map((movie, idx) => (
+                <MovieCard key={movie.slug} movie={movie} index={idx} />
+              ))
+            )}
           </div>
         </section>
       </div>

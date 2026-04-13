@@ -12,6 +12,8 @@ import History from './pages/History';
 import Admin from './pages/Admin';
 import './i18n'; // Import i18n configuration
 
+import AIChatBox from './components/AIChatBox';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -36,6 +38,7 @@ export default function App() {
             </Routes>
           </main>
           <Footer />
+          <AIChatBox />
         </div>
       </Router>
     </AuthProvider>
