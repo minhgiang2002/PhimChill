@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              role: firebaseUser.email === 'minhkhung72@gmail.com' ? 'admin' : 'user',
+              role: firebaseUser.email === 'minhgiang@pavietnam.vn' ? 'admin' : 'user',
               createdAt: serverTimestamp(),
             };
             await setDoc(userDocRef, newProfile);
