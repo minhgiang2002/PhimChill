@@ -119,7 +119,10 @@ export default function AdminPage() {
   const handleApiSourceChange = (source: ApiSource) => {
     setApiSource(source);
     setApiSourceState(source);
-    toast.success(`Đã chuyển nguồn API sang: ${source === 'nguonc' ? 'Nguồn 1' : 'Nguồn 2'}`);
+    let sourceName = 'Nguồn 1';
+    if (source === 'kkphim') sourceName = 'Nguồn 2';
+    if (source === 'phimapi_delta') sourceName = 'Nguồn 3 (Delta)';
+    toast.success(`Đã chuyển nguồn API sang: ${sourceName}`);
     // Reload to apply changes
     setTimeout(() => window.location.reload(), 1000);
   };
@@ -154,7 +157,7 @@ export default function AdminPage() {
           <Database className="w-5 h-5 sm:w-6 sm:h-6 text-brand" />
           <h2 className="text-lg sm:text-xl font-black tracking-tighter uppercase italic">Cấu hình Nguồn API</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <button
             onClick={() => handleApiSourceChange('nguonc')}
             className={cn(
@@ -185,6 +188,22 @@ export default function AdminPage() {
               {apiSource === 'kkphim' && <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />}
             </div>
             <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Nguồn phim phong phú, hỗ trợ ảnh WebP.</p>
+          </button>
+
+          <button
+            onClick={() => handleApiSourceChange('phimapi_delta')}
+            className={cn(
+              "flex flex-col items-start p-4 sm:p-6 rounded-xl sm:rounded-2xl border transition-all text-left",
+              apiSource === 'phimapi_delta' 
+                ? "bg-purple-500/10 border-purple-500 shadow-lg shadow-purple-500/10" 
+                : "bg-white/5 border-white/10 hover:border-white/20"
+            )}
+          >
+            <div className="flex items-center justify-between w-full mb-1 sm:mb-2">
+              <span className="text-base sm:text-lg font-black tracking-tighter uppercase italic">Nguồn 3 (Delta)</span>
+              {apiSource === 'phimapi_delta' && <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />}
+            </div>
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Nguồn tổng hợp từ nhiều API khác nhau.</p>
           </button>
         </div>
         <p className="mt-4 text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-2">
