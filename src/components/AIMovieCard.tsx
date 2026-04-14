@@ -16,8 +16,12 @@ export default function AIMovieCard({ keyword }: AIMovieCardProps) {
 
   useEffect(() => {
     const fetchMovie = async () => {
+      if (!keyword) {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await movieService.search(keyword);
+        const res = await movieService.search(keyword.trim());
         if (res.items && res.items.length > 0) {
           setMovie(res.items[0]);
         }

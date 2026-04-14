@@ -88,7 +88,7 @@ export default function AIChatBox() {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className={cn(
               "bg-surface-light border border-white/10 rounded-2xl shadow-2xl overflow-hidden mb-4 flex flex-col transition-all duration-300",
-              "w-[350px] sm:w-[400px]"
+              "w-[calc(100vw-2rem)] sm:w-[400px]"
             )}
           >
             {/* Header */}

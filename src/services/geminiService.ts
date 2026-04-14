@@ -1,10 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const apiKey = process.env.GEMINI_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
 
 export const geminiService = {
   async chat(message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[] = []) {
     try {
+      if (!apiKey) {
+        return "Lỗi: Chưa cấu hình GEMINI_API_KEY. Nếu bạn đang chạy trên Vercel, vui lòng vào Settings > Environment Variables để thêm GEMINI_API_KEY.";
+      }
+
       // Gemini API requires the first message in history to be from 'user'
       // If our history starts with 'model' (e.g. initial greeting), we skip it
       const validHistory = history.length > 0 && history[0].role === 'model' 
@@ -12,7 +17,7 @@ export const geminiService = {
         : history;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.5-flash",
         contents: [
           ...validHistory.map(h => ({ role: h.role, parts: h.parts })),
           { role: 'user', parts: [{ text: message }] }
@@ -24,9 +29,16 @@ export const geminiService = {
       });
 
       return response.text || "Xin lỗi, tôi không thể trả lời lúc này.";
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gemini API Error:", error);
-      return "Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại sau.";
+      
+      // Handle specific API errors
+      if (error?.status === 400 || error?.message?.includes('API key')) {
+        return "Lỗi xác thực API Key. Vui lòng kiểm tra lại GEMINI_API_KEY.";
+      }
+      
+      // Return the exact error message for debugging
+      return `Lỗi kết nối AI: ${error?.message || 'Không rõ nguyên nhân'}. Vui lòng thử lại.`;
     }
   }
 };
