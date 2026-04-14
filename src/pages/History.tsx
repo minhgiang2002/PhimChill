@@ -29,21 +29,40 @@ export default function HistoryPage() {
     }
 
     const historyRef = collection(db, 'users', user.uid, 'history');
-    const q = query(historyRef, orderBy('updatedAt', 'desc'));
+    // Remove orderBy from query to avoid index issues if any, we can sort locally
+    const q = query(historyRef);
+
+    // Safety timeout
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      clearTimeout(timeoutId);
       const items = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as HistoryItem[];
+      
+      // Sort locally by updatedAt desc
+      items.sort((a, b) => {
+        const timeA = a.updatedAt?.toMillis?.() || 0;
+        const timeB = b.updatedAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      
       setHistory(items);
       setLoading(false);
     }, (error) => {
+      clearTimeout(timeoutId);
       console.error("Error fetching history:", error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, [user]);
 
   const removeHistoryItem = async (movieId: string) => {

@@ -37,6 +37,10 @@ export const geminiService = {
         return "Lỗi xác thực API Key. Vui lòng kiểm tra lại GEMINI_API_KEY.";
       }
       
+      if (error?.status === 503 || error?.message?.includes('503') || error?.message?.includes('high demand')) {
+        return "Hệ thống AI hiện đang quá tải do có quá nhiều người sử dụng. Vui lòng thử lại sau ít phút nhé!";
+      }
+      
       // Return the exact error message for debugging
       return `Lỗi kết nối AI: ${error?.message || 'Không rõ nguyên nhân'}. Vui lòng thử lại.`;
     }

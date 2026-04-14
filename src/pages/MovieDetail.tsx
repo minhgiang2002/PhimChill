@@ -40,10 +40,10 @@ export default function MovieDetail() {
           await setDoc(historyRef, {
             userId: user.uid,
             movieSlug: movie.slug,
-            movieName: movie.name,
-            movieThumb: movie.thumb_url,
-            episodeName: currentEpisode.name,
-            episodeSlug: currentEpisode.slug,
+            movieName: movie.name || '',
+            movieThumb: movie.thumb_url || movie.poster_url || '',
+            episodeName: currentEpisode.name || '',
+            episodeSlug: currentEpisode.slug || '',
             updatedAt: serverTimestamp(),
           }, { merge: true });
         } catch (error) {

@@ -39,9 +39,28 @@ export default function AIChatBox() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: 'Chào bạn! Tôi là trợ lý ảo PhimChill. Tôi có thể giúp gì cho bạn hôm nay?' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const saved = localStorage.getItem('ai_chat_history');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error("Failed to load chat history", e);
+    }
+    return [
+      { role: 'model', text: 'Chào bạn! Tôi là trợ lý ảo PhimChill. Tôi có thể giúp gì cho bạn hôm nay?' }
+    ];
+  });
+
+  // Save to localStorage whenever messages change
+  useEffect(() => {
+    try {
+      localStorage.setItem('ai_chat_history', JSON.stringify(messages));
+    } catch (e) {
+      console.error("Failed to save chat history", e);
+    }
+  }, [messages]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +122,14 @@ export default function AIChatBox() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => {
+                    setMessages([{ role: 'model', text: 'Chào bạn! Tôi là trợ lý ảo PhimChill. Tôi có thể giúp gì cho bạn hôm nay?' }]);
+                  }}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white text-[10px] uppercase font-bold tracking-widest mr-2"
+                >
+                  Xóa
+                </button>
                 <button 
                   onClick={() => setIsMinimized(!isMinimized)}
                   className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
