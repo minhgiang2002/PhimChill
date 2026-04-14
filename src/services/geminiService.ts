@@ -4,6 +4,28 @@ const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 export const geminiService = {
+  async getRelatedKeywords(keyword: string): Promise<string[]> {
+    try {
+      if (!apiKey) return [];
+      
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          { role: 'user', parts: [{ text: `Tôi đang tìm kiếm phim với từ khóa: "${keyword}". Hãy trả về danh sách các tên gọi khác, tên gốc, hoặc tên tiếng Việt phổ biến của phim này (tối đa 3 tên). Chỉ trả về danh sách các tên, mỗi tên trên 1 dòng, không giải thích gì thêm.` }] }
+        ],
+        config: {
+          temperature: 0.3,
+        },
+      });
+
+      const text = response.text || "";
+      return text.split('\n').map(k => k.trim()).filter(k => k.length > 0 && k.toLowerCase() !== keyword.toLowerCase());
+    } catch (error) {
+      console.error("Gemini API Error in getRelatedKeywords:", error);
+      return [];
+    }
+  },
+
   async chat(message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[] = []) {
     try {
       if (!apiKey) {

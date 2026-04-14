@@ -1,8 +1,9 @@
 import { MovieListResponse, MovieDetailResponse, Movie, MovieDetails, Server } from '@/src/types/movie';
+import { geminiService } from './geminiService';
 
 const NGUONC_BASE = 'https://phim.nguonc.com/api';
 const KKPHIM_BASE = 'https://phimapi.com';
-const PHIM_API_DELTA_BASE = 'https://phim-api-delta.vercel.app/api/movies';
+const PHIM_API_DELTA_BASE = 'https://corsproxy.io/?' + encodeURIComponent('https://phim-api-delta.vercel.app/api/movies');
 
 export type ApiSource = 'nguonc' | 'kkphim' | 'phimapi_delta';
 
@@ -33,7 +34,15 @@ async function fetchApi<T>(baseUrl: string, endpoint: string, params: Record<str
     queryParams.append(key, value.toString());
   });
 
-  const url = `${baseUrl}${endpoint}${queryParams.toString() ? (endpoint.includes('?') ? `&${queryParams.toString()}` : `?${queryParams.toString()}`) : ''}`;
+  // Handle corsproxy.io correctly by appending to the encoded URL
+  let url = '';
+  if (baseUrl.includes('corsproxy.io')) {
+    const originalUrl = decodeURIComponent(baseUrl.replace('https://corsproxy.io/?', ''));
+    const fullOriginalUrl = `${originalUrl}${endpoint}${queryParams.toString() ? (endpoint.includes('?') ? `&${queryParams.toString()}` : `?${queryParams.toString()}`) : ''}`;
+    url = `https://corsproxy.io/?${encodeURIComponent(fullOriginalUrl)}`;
+  } else {
+    url = `${baseUrl}${endpoint}${queryParams.toString() ? (endpoint.includes('?') ? `&${queryParams.toString()}` : `?${queryParams.toString()}`) : ''}`;
+  }
   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 7000); // Reduced to 7s
@@ -45,8 +54,9 @@ async function fetchApi<T>(baseUrl: string, endpoint: string, params: Record<str
     return await response.json();
   } catch (error: any) {
     clearTimeout(timeoutId);
-    if (retries > 0 && error.name !== 'AbortError') {
-      await new Promise(resolve => setTimeout(resolve, 800));
+    // Do not retry on CORS or offline errors (Failed to fetch) to avoid slowing down the app
+    if (retries > 0 && error.name !== 'AbortError' && error.message !== 'Failed to fetch') {
+      await new Promise(resolve => setTimeout(resolve, 300)); // Reduced retry delay
       return fetchApi<T>(baseUrl, endpoint, params, retries - 1);
     }
     throw error;
@@ -417,32 +427,62 @@ export const movieService = {
   },
 
   search: async (keyword: string): Promise<MovieListResponse> => {
-    if (currentSource === 'phimapi_delta') {
-      const data: any = await fetchApi(PHIM_API_DELTA_BASE, '/search', { keyword });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: 1,
-          total_page: 1,
-          total_items: data.items?.length || 0,
-          items_per_page: data.items?.length || 20
-        },
-        items: (data.items || []).map(normalizeDeltaMovie)
-      };
+    const performSearch = async (kw: string): Promise<MovieListResponse> => {
+      if (currentSource === 'phimapi_delta') {
+        const data: any = await fetchApi(PHIM_API_DELTA_BASE, '/search', { keyword: kw });
+        return {
+          status: 'success',
+          paginate: {
+            current_page: 1,
+            total_page: 1,
+            total_items: data.items?.length || 0,
+            items_per_page: data.items?.length || 20
+          },
+          items: (data.items || []).map(normalizeDeltaMovie)
+        };
+      }
+      if (currentSource === 'kkphim') {
+        const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/tim-kiem`, { keyword: kw, limit: 12 });
+        return {
+          status: 'success',
+          paginate: {
+            current_page: data.data.params.pagination.currentPage,
+            total_page: data.data.params.pagination.totalPages,
+            total_items: data.data.params.pagination.totalItems,
+            items_per_page: data.data.params.pagination.totalItemsPerPage
+          },
+          items: data.data.items.map(normalizeKKPhimMovie)
+        };
+      }
+      const data = await fetchApi<MovieListResponse>(NGUONC_BASE, '/films/search', { keyword: kw });
+      return { ...data, items: data.items.map(normalizeNguonCMovie) };
+    };
+
+    try {
+      let result = await performSearch(keyword);
+      
+      // If no results, try to get related keywords from AI
+      if (!result.items || result.items.length === 0) {
+        console.log(`[movieService] No results for "${keyword}", trying AI related keywords...`);
+        const relatedKeywords = await geminiService.getRelatedKeywords(keyword);
+        
+        for (const relatedKw of relatedKeywords) {
+          console.log(`[movieService] Trying related keyword: "${relatedKw}"`);
+          try {
+            const relatedResult = await performSearch(relatedKw);
+            if (relatedResult.items && relatedResult.items.length > 0) {
+              return relatedResult;
+            }
+          } catch (e) {
+            console.error(`[movieService] Search failed for related keyword "${relatedKw}":`, e);
+          }
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("[movieService] Search error:", error);
+      throw error;
     }
-    if (currentSource === 'kkphim') {
-      const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/tim-kiem`, { keyword, limit: 12 });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: data.data.params.pagination.currentPage,
-          total_page: data.data.params.pagination.totalPages,
-          total_items: data.data.params.pagination.totalItems,
-          items_per_page: data.data.params.pagination.totalItemsPerPage
-        },
-        items: data.data.items.map(normalizeKKPhimMovie)
-      };
-    }
-    return fetchApi<MovieListResponse>(NGUONC_BASE, '/films/search', { keyword });
   },
 };
