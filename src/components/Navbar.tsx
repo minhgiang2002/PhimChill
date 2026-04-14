@@ -89,13 +89,16 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-md border-b border-white/5">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/5 shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="flex items-center gap-1.5 sm:gap-2 group">
-              <Film className="w-6 h-6 sm:w-8 sm:h-8 text-brand group-hover:scale-110 transition-transform" />
-              <span className="text-lg sm:text-2xl font-black tracking-tighter text-white uppercase">CINE<span className="text-brand">STREAM</span></span>
+              <div className="relative">
+                <div className="absolute inset-0 bg-brand/50 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <Film className="w-6 h-6 sm:w-8 sm:h-8 text-brand relative z-10 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="text-lg sm:text-2xl font-black tracking-tighter text-white uppercase drop-shadow-lg">CINE<span className="text-brand">STREAM</span></span>
             </Link>
 
             <div className="hidden lg:flex items-center gap-6">

@@ -3,14 +3,13 @@ import { geminiService } from './geminiService';
 
 const NGUONC_BASE = 'https://phim.nguonc.com/api';
 const KKPHIM_BASE = 'https://phimapi.com';
-const PHIM_API_DELTA_BASE = 'https://corsproxy.io/?' + encodeURIComponent('https://phim-api-delta.vercel.app/api/movies');
 
-export type ApiSource = 'nguonc' | 'kkphim' | 'phimapi_delta';
+export type ApiSource = 'nguonc' | 'kkphim';
 
 let currentSource: ApiSource = 'nguonc';
 try {
   const saved = localStorage.getItem('api_source');
-  if (saved === 'nguonc' || saved === 'kkphim' || saved === 'phimapi_delta') {
+  if (saved === 'nguonc' || saved === 'kkphim') {
     currentSource = saved as ApiSource;
   }
 } catch (e) {
@@ -94,40 +93,8 @@ function normalizeKKPhimMovie(m: any): Movie {
   };
 }
 
-function normalizeDeltaMovie(m: any): Movie {
-  return {
-    name: m.name,
-    slug: m.slug,
-    original_name: m.original_name || m.origin_name || '',
-    thumb_url: m.thumb_url,
-    poster_url: m.poster_url,
-    description: m.description || m.content || '',
-    total_episodes: m.total_episodes || m.episode_total || 0,
-    current_episode: m.current_episode || m.episode_current || '',
-    time: m.time || '',
-    quality: m.quality || '',
-    language: m.language || m.lang || '',
-    director: Array.isArray(m.director) ? m.director.join(', ') : (m.director || null),
-    casts: Array.isArray(m.casts) ? m.casts.join(', ') : (m.casts || null),
-    year: m.year
-  };
-}
-
 export const movieService = {
   getNewUpdates: async (page: number = 1): Promise<MovieListResponse> => {
-    if (currentSource === 'phimapi_delta') {
-      const data: any = await fetchApi(PHIM_API_DELTA_BASE, '/latest', { page });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: page,
-          total_page: 100,
-          total_items: 1000,
-          items_per_page: data.items?.length || 20
-        },
-        items: (data.items || []).map(normalizeDeltaMovie)
-      };
-    }
     if (currentSource === 'kkphim') {
       const data: any = await fetchApi(KKPHIM_BASE, '/danh-sach/phim-moi-cap-nhat', { page });
       return {
@@ -146,19 +113,6 @@ export const movieService = {
   },
 
   getByCategory: async (slug: string, page: number = 1): Promise<MovieListResponse> => {
-    if (currentSource === 'phimapi_delta') {
-      const data: any = await fetchApi(PHIM_API_DELTA_BASE, `/category/${slug}`, { page });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: page,
-          total_page: 100,
-          total_items: 1000,
-          items_per_page: data.items?.length || 20
-        },
-        items: (data.items || []).map(normalizeDeltaMovie)
-      };
-    }
     if (currentSource === 'kkphim') {
       const kkSlug = slug === 'phim-le' ? 'phim-le' : 'phim-bo';
       const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/danh-sach/${kkSlug}`, { page });
@@ -177,19 +131,6 @@ export const movieService = {
   },
 
   getByGenre: async (slug: string, page: number = 1): Promise<MovieListResponse> => {
-    if (currentSource === 'phimapi_delta') {
-      const data: any = await fetchApi(PHIM_API_DELTA_BASE, `/genre/${slug}`, { page });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: page,
-          total_page: 100,
-          total_items: 1000,
-          items_per_page: data.items?.length || 20
-        },
-        items: (data.items || []).map(normalizeDeltaMovie)
-      };
-    }
     if (currentSource === 'kkphim') {
       const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/the-loai/${slug}`, { page });
       return {
@@ -207,19 +148,6 @@ export const movieService = {
   },
 
   getByCountry: async (slug: string, page: number = 1): Promise<MovieListResponse> => {
-    if (currentSource === 'phimapi_delta') {
-      const data: any = await fetchApi(PHIM_API_DELTA_BASE, `/country/${slug}`, { page });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: page,
-          total_page: 100,
-          total_items: 1000,
-          items_per_page: data.items?.length || 20
-        },
-        items: (data.items || []).map(normalizeDeltaMovie)
-      };
-    }
     if (currentSource === 'kkphim') {
       const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/quoc-gia/${slug}`, { page });
       return {
@@ -237,19 +165,6 @@ export const movieService = {
   },
 
   getByYear: async (year: string | number, page: number = 1): Promise<MovieListResponse> => {
-    if (currentSource === 'phimapi_delta') {
-      const data: any = await fetchApi(PHIM_API_DELTA_BASE, `/year/${year}`, { page });
-      return {
-        status: 'success',
-        paginate: {
-          current_page: page,
-          total_page: 100,
-          total_items: 1000,
-          items_per_page: data.items?.length || 20
-        },
-        items: (data.items || []).map(normalizeDeltaMovie)
-      };
-    }
     if (currentSource === 'kkphim') {
       const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/nam/${year}`, { page });
       return {
@@ -267,18 +182,17 @@ export const movieService = {
   },
 
   getMovieDetail: async (slug: string): Promise<MovieDetailResponse> => {
-    // 1. Try to fetch from all 3 sources
+    // 1. Try to fetch from all sources
     const nguoncPromise = fetchApi<MovieDetailResponse>(NGUONC_BASE, `/film/${slug}`).catch(() => null);
     const kkphimPromise = fetchApi<any>(KKPHIM_BASE, `/phim/${slug}`).catch(() => null);
-    const deltaPromise = fetchApi<any>(PHIM_API_DELTA_BASE, `/details/${slug}`).catch(() => null);
 
-    let [nguoncData, kkphimData, deltaData] = await Promise.all([nguoncPromise, kkphimPromise, deltaPromise]);
+    let [nguoncData, kkphimData] = await Promise.all([nguoncPromise, kkphimPromise]);
 
     // Helper to normalize strings for better comparison
     const normalizeForMatch = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     // 2. Fallback: If one source failed, try searching by name from the other source
-    const searchName = nguoncData?.movie?.name || kkphimData?.movie?.name || deltaData?.movie?.name;
+    const searchName = nguoncData?.movie?.name || kkphimData?.movie?.name;
 
     if (searchName) {
       if (!kkphimData) {
@@ -306,22 +220,9 @@ export const movieService = {
           nguoncData = await fetchApi<MovieDetailResponse>(NGUONC_BASE, `/film/${bestMatch.slug}`).catch(() => null);
         }
       }
-
-      if (!deltaData) {
-        console.log(`[movieService] Delta missing slug "${slug}", searching for "${searchName}"...`);
-        const searchRes: any = await fetchApi(PHIM_API_DELTA_BASE, '/search', { keyword: searchName }).catch(() => null);
-        if (searchRes?.items?.length > 0) {
-          const targetMatch = normalizeForMatch(searchName);
-          const bestMatch = searchRes.items.find((item: any) => 
-            normalizeForMatch(item.name) === targetMatch || 
-            normalizeForMatch(item.original_name || '') === targetMatch
-          ) || searchRes.items[0];
-          deltaData = await fetchApi<any>(PHIM_API_DELTA_BASE, `/details/${bestMatch.slug}`).catch(() => null);
-        }
-      }
     }
 
-    if (!nguoncData && !kkphimData && !deltaData) throw new Error("Movie not found");
+    if (!nguoncData && !kkphimData) throw new Error("Movie not found");
 
     let baseDetail: MovieDetails;
     let allServers: Server[] = [];
@@ -329,21 +230,13 @@ export const movieService = {
     // Prioritize current source for base detail and server order
     let sources = [
       { data: nguoncData, type: 'nguonc' },
-      { data: kkphimData, type: 'kkphim' },
-      { data: deltaData, type: 'phimapi_delta' }
+      { data: kkphimData, type: 'kkphim' }
     ];
 
     if (currentSource === 'kkphim') {
       sources = [
         { data: kkphimData, type: 'kkphim' },
-        { data: nguoncData, type: 'nguonc' },
-        { data: deltaData, type: 'phimapi_delta' }
-      ];
-    } else if (currentSource === 'phimapi_delta') {
-      sources = [
-        { data: deltaData, type: 'phimapi_delta' },
-        { data: nguoncData, type: 'nguonc' },
-        { data: kkphimData, type: 'kkphim' }
+        { data: nguoncData, type: 'nguonc' }
       ];
     }
 
@@ -397,23 +290,6 @@ export const movieService = {
           }));
           allServers = [...allServers, ...kkServers];
         }
-      } else if (src.type === 'phimapi_delta' && data.movie) {
-        if (!baseDetail!) baseDetail = data.movie;
-
-        if (Array.isArray(data.movie.episodes)) {
-          const deltaServers = data.movie.episodes.map((s: any, idx: number) => ({
-            ...s,
-            server_name: `Nguồn 3 (${s.server_name || idx + 1})`,
-            items: Array.isArray(s.items) ? s.items.map((e: any) => {
-              let cleanName = e.name;
-              if (cleanName?.toLowerCase().startsWith('tập')) {
-                cleanName = cleanName.replace(/^[Tt]ập\s*/, '');
-              }
-              return { ...e, name: cleanName };
-            }) : []
-          }));
-          allServers = [...allServers, ...deltaServers];
-        }
       }
     }
 
@@ -428,19 +304,6 @@ export const movieService = {
 
   search: async (keyword: string): Promise<MovieListResponse> => {
     const performSearch = async (kw: string): Promise<MovieListResponse> => {
-      if (currentSource === 'phimapi_delta') {
-        const data: any = await fetchApi(PHIM_API_DELTA_BASE, '/search', { keyword: kw });
-        return {
-          status: 'success',
-          paginate: {
-            current_page: 1,
-            total_page: 1,
-            total_items: data.items?.length || 0,
-            items_per_page: data.items?.length || 20
-          },
-          items: (data.items || []).map(normalizeDeltaMovie)
-        };
-      }
       if (currentSource === 'kkphim') {
         const data: any = await fetchApi(KKPHIM_BASE, `/v1/api/tim-kiem`, { keyword: kw, limit: 12 });
         return {

@@ -79,21 +79,21 @@ export default function Home() {
         newUpdates[0] && <Hero movie={newUpdates[0]} />
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 sm:-mt-16 relative z-10">
         {/* Quick Menu */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-16">
           {QUICK_MENU.map((item) => (
             <Link 
               key={item.name}
               to={item.link}
-              className="flex items-center gap-4 p-4 bg-surface-light border border-white/5 rounded-2xl hover:border-brand/50 transition-all group shadow-xl"
+              className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl hover:border-brand/50 hover:bg-white/5 transition-all duration-300 group shadow-2xl"
             >
-              <div className={`w-12 h-12 ${item.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <item.icon className={`w-6 h-6 ${item.color}`} />
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 ${item.bg} rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                <item.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${item.color}`} />
               </div>
               <div>
-                <span className="block text-sm font-black text-white uppercase tracking-tighter italic">{item.name}</span>
-                <span className="block text-[10px] text-gray-500 font-bold uppercase tracking-widest">Khám phá</span>
+                <span className="block text-xs sm:text-sm font-black text-white uppercase tracking-tighter italic group-hover:text-brand transition-colors">{item.name}</span>
+                <span className="block text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest">Khám phá</span>
               </div>
             </Link>
           ))}
