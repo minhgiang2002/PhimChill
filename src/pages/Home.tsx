@@ -3,6 +3,7 @@ import { movieService } from '@/src/services/movieService';
 import { Movie } from '@/src/types/movie';
 import Hero from '@/src/components/Hero';
 import MovieCard, { MovieCardSkeleton } from '@/src/components/MovieCard';
+import ErrorState from '@/src/components/ErrorState';
 import { ChevronRight, Zap, Film, Tv, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -17,52 +18,49 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const source = getApiSource();
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      
-      const safetyTimeout = setTimeout(() => {
-        if (newUpdates.length === 0) {
-          setLoading(false);
-          setError(t('home.error_loading'));
-        }
-      }, 10000);
-
-      try {
-        const [newRes, movieRes, tvRes] = await Promise.all([
-          movieService.getNewUpdates(1),
-          movieService.getByCategory('phim-le', 1),
-          movieService.getByCategory('phim-bo', 1),
-        ]);
-        setNewUpdates(newRes.items);
-        setMovies(movieRes.items);
-        setTvSeries(tvRes.items);
-        setError(null);
-      } catch (err) {
-        if (newUpdates.length === 0) {
-          setError(t('home.error_loading'));
-        }
-        console.error(err);
-      } finally {
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    const safetyTimeout = setTimeout(() => {
+      if (newUpdates.length === 0) {
         setLoading(false);
-        clearTimeout(safetyTimeout);
+        setError(t('home.error_loading'));
       }
-    };
+    }, 10000);
+
+    try {
+      const [newRes, movieRes, tvRes] = await Promise.all([
+        movieService.getNewUpdates(1),
+        movieService.getByCategory('phim-le', 1),
+        movieService.getByCategory('phim-bo', 1),
+      ]);
+      setNewUpdates(newRes.items);
+      setMovies(movieRes.items);
+      setTvSeries(tvRes.items);
+      setError(null);
+    } catch (err) {
+      if (newUpdates.length === 0) {
+        setError(t('home.error_loading'));
+      }
+      console.error(err);
+    } finally {
+      setLoading(false);
+      clearTimeout(safetyTimeout);
+    }
+  };
+
+  useEffect(() => {
     loadData();
   }, [t, source]);
 
   if (error && newUpdates.length === 0) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold mb-2 text-brand">{error}</h2>
-        <p className="text-gray-400">{t('home.error_sub')}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-6 bg-brand px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs"
-        >
-          Thử lại
-        </button>
-      </div>
+      <ErrorState 
+        title="Lỗi kết nối" 
+        message={error} 
+        onRetry={loadData} 
+      />
     );
   }
 

@@ -10,6 +10,7 @@ import Search from './pages/Search';
 import MovieList from './pages/MovieList';
 import History from './pages/History';
 import Admin from './pages/Admin';
+import NotFound from './pages/NotFound';
 import './i18n'; // Import i18n configuration
 
 import AIChatBox from './components/AIChatBox';
@@ -34,7 +35,7 @@ export default function App() {
               <Route path="/admin" element={<Admin />} />
               <Route path="/list/:type/:slug" element={<MovieList />} />
               {/* Fallback for other routes */}
-              <Route path="*" element={<Home />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />

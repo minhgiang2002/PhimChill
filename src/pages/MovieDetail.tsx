@@ -6,6 +6,7 @@ import { Star, Clock, List, Info, Play, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { SafeImage } from '@/src/components/SafeImage';
+import ErrorState from '@/src/components/ErrorState';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/src/lib/AuthContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -18,6 +19,7 @@ export default function MovieDetail() {
   const { id: slug } = useParams<{ id: string }>();
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   const [activeServerIndex, setActiveServerIndex] = useState(0);
   const [isCinemaMode, setIsCinemaMode] = useState(false);
@@ -52,20 +54,23 @@ export default function MovieDetail() {
     }
   }, [currentEpisode, user, movie]);
 
+  const loadMovie = async () => {
+    if (!slug) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await movieService.getMovieDetail(slug);
+      setMovie(res.movie);
+      setActiveServerIndex(0); // Reset to first server when movie changes
+    } catch (err) {
+      console.error(err);
+      setError("Không tìm thấy phim hoặc có lỗi xảy ra khi tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadMovie = async () => {
-      if (!slug) return;
-      setLoading(true);
-      try {
-        const res = await movieService.getMovieDetail(slug);
-        setMovie(res.movie);
-        setActiveServerIndex(0); // Reset to first server when movie changes
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadMovie();
     window.scrollTo(0, 0);
   }, [slug]);
@@ -78,11 +83,15 @@ export default function MovieDetail() {
     );
   }
 
-  if (!movie) return (
-    <div className="h-screen flex items-center justify-center">
-      <p className="text-xl text-gray-400">{t('detail.not_found')}</p>
-    </div>
-  );
+  if (error || !movie) {
+    return (
+      <ErrorState 
+        title="Không tìm thấy phim" 
+        message={error || t('detail.not_found')} 
+        onRetry={loadMovie} 
+      />
+    );
+  }
 
   const handlePlay = (episode: Episode) => {
     setCurrentEpisode(episode);

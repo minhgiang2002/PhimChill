@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { movieService } from '@/src/services/movieService';
 import { Movie, Paginate } from '@/src/types/movie';
 import MovieCard, { MovieCardSkeleton } from '@/src/components/MovieCard';
+import ErrorState from '@/src/components/ErrorState';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -13,6 +14,7 @@ export default function MovieList() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [paginate, setPaginate] = useState<Paginate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const getTitle = () => {
@@ -25,38 +27,51 @@ export default function MovieList() {
     return 'List';
   };
 
-  useEffect(() => {
-    const loadMovies = async () => {
-      setLoading(true);
-      try {
-        let res;
-        if (location.pathname.includes('/trending')) {
-          res = await movieService.getNewUpdates(page);
-        } else if (location.pathname.includes('/movies')) {
-          res = await movieService.getByCategory('phim-le', page);
-        } else if (location.pathname.includes('/tv')) {
-          res = await movieService.getByCategory('phim-bo', page);
-        } else if (type === 'the-loai' && slug) {
-          res = await movieService.getByGenre(slug, page);
-        } else if (type === 'quoc-gia' && slug) {
-          res = await movieService.getByCountry(slug, page);
-        } else if (type === 'nam' && slug) {
-          res = await movieService.getByYear(slug, page);
-        }
-
-        if (res) {
-          setMovies(res.items);
-          setPaginate(res.paginate);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+  const loadMovies = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let res;
+      if (location.pathname.includes('/trending')) {
+        res = await movieService.getNewUpdates(page);
+      } else if (location.pathname.includes('/movies')) {
+        res = await movieService.getByCategory('phim-le', page);
+      } else if (location.pathname.includes('/tv')) {
+        res = await movieService.getByCategory('phim-bo', page);
+      } else if (type === 'the-loai' && slug) {
+        res = await movieService.getByGenre(slug, page);
+      } else if (type === 'quoc-gia' && slug) {
+        res = await movieService.getByCountry(slug, page);
+      } else if (type === 'nam' && slug) {
+        res = await movieService.getByYear(slug, page);
       }
-    };
+
+      if (res) {
+        setMovies(res.items);
+        setPaginate(res.paginate);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Không thể tải danh sách phim. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadMovies();
     window.scrollTo(0, 0);
   }, [type, slug, page, location.pathname]);
+
+  if (error && movies.length === 0) {
+    return (
+      <ErrorState 
+        title="Lỗi tải dữ liệu" 
+        message={error} 
+        onRetry={loadMovies} 
+      />
+    );
+  }
 
   return (
     <div className="pt-24 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">

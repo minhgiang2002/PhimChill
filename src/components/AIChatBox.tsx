@@ -3,11 +3,37 @@ import { MessageCircle, X, Send, Loader2, Bot, User, Minimize2, Maximize2 } from
 import { motion, AnimatePresence } from 'motion/react';
 import { geminiService } from '@/src/services/geminiService';
 import { cn } from '@/src/lib/utils';
+import AIMovieCard from './AIMovieCard';
 
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
+
+const renderMessageText = (text: string) => {
+  // Regex to match [SEARCH:keyword]
+  const regex = /\[SEARCH:(.*?)\]/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex, match.index)}</span>);
+    }
+    // Add the AIMovieCard
+    parts.push(<AIMovieCard key={`movie-${match.index}`} keyword={match[1]} />);
+    lastIndex = regex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex)}</span>);
+  }
+
+  return parts.length > 0 ? parts : text;
+};
 
 export default function AIChatBox() {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +74,7 @@ export default function AIChatBox() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -100,8 +126,8 @@ export default function AIChatBox() {
                     <div 
                       key={idx} 
                       className={cn(
-                        "flex gap-3 max-w-[85%]",
-                        msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
+                        "flex gap-3",
+                        msg.role === 'user' ? "ml-auto flex-row-reverse max-w-[85%]" : "mr-auto w-full"
                       )}
                     >
                       <div className={cn(
@@ -114,9 +140,9 @@ export default function AIChatBox() {
                         "p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
                         msg.role === 'user' 
                           ? "bg-brand text-white rounded-tr-none" 
-                          : "bg-white/5 border border-white/5 text-gray-200 rounded-tl-none"
+                          : "bg-white/5 border border-white/5 text-gray-200 rounded-tl-none w-full"
                       )}>
-                        {msg.text}
+                        {msg.role === 'model' ? renderMessageText(msg.text) : msg.text}
                       </div>
                     </div>
                   ))}
